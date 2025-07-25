@@ -57,6 +57,9 @@
         document.getElementById('resetBtn').style.display = 'inline-block';
         document.getElementById('controls').style.display = 'none';
         accessGranted = false;
+
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
       } catch (error) {
         document.getElementById('status').textContent = '❌ Verbindung fehlgeschlagen: ' + error;
       }
@@ -65,12 +68,15 @@
     function disconnect() {
       if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
-        document.getElementById('status').textContent = '🔌 Verbindung getrennt';
-        document.getElementById('auth').style.display = 'block';
-        document.getElementById('controls').style.display = 'none';
-        document.getElementById('resetBtn').style.display = 'none';
-        accessGranted = false;
       }
+    }
+
+    function onDisconnected() {
+      document.getElementById('status').textContent = '🔌 Verbindung getrennt';
+      document.getElementById('auth').style.display = 'block';
+      document.getElementById('controls').style.display = 'none';
+      document.getElementById('resetBtn').style.display = 'none';
+      accessGranted = false;
     }
 
     async function sendCode() {
@@ -79,7 +85,6 @@
       const encoder = new TextEncoder();
       await bleCharacteristic.writeValue(encoder.encode(code.trim()));
 
-      // Wir gehen davon aus, dass der ESP den Code akzeptiert
       accessGranted = true;
       document.getElementById('controls').style.display = 'block';
       document.getElementById('auth').style.display = 'none';
