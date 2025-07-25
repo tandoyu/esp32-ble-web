@@ -48,6 +48,8 @@
           optionalServices: [SERVICE_UUID]
         });
 
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
         const server = await bleDevice.gatt.connect();
         const service = await server.getPrimaryService(SERVICE_UUID);
         bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
@@ -57,9 +59,6 @@
         document.getElementById('resetBtn').style.display = 'inline-block';
         document.getElementById('controls').style.display = 'none';
         accessGranted = false;
-
-        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
-
       } catch (error) {
         document.getElementById('status').textContent = '❌ Verbindung fehlgeschlagen: ' + error;
       }
@@ -68,6 +67,8 @@
     function disconnect() {
       if (bleDevice && bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
+      } else {
+        document.getElementById('status').textContent = '⚠️ Kein Gerät verbunden.';
       }
     }
 
@@ -77,11 +78,16 @@
       document.getElementById('controls').style.display = 'none';
       document.getElementById('resetBtn').style.display = 'none';
       accessGranted = false;
+      bleCharacteristic = null;
+      bleDevice = null;
     }
 
     async function sendCode() {
       const code = document.getElementById('codeInput').value;
-      if (!bleCharacteristic || !code) return;
+      if (!bleCharacteristic || !code) {
+        document.getElementById('status').textContent = '⚠️ Bitte verbinden und Code eingeben.';
+        return;
+      }
       const encoder = new TextEncoder();
       await bleCharacteristic.writeValue(encoder.encode(code.trim()));
 
@@ -101,7 +107,10 @@
     }
 
     async function resetCode() {
-      if (!bleCharacteristic) return;
+      if (!bleCharacteristic) {
+        document.getElementById('status').textContent = '⚠️ Nicht verbunden.';
+        return;
+      }
       const encoder = new TextEncoder();
       await bleCharacteristic.writeValue(encoder.encode("RESET_CODE"));
 
