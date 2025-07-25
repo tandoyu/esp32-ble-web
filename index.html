@@ -1,61 +1,223 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-  <title>ESP32 Web Bluetooth</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warnblinker Vespa GTS</title>
   <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 40px; }
-    button { padding: 15px 30px; margin: 10px; font-size: 18px; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #333;
+      max-width: 400px;
+      margin: 40px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #007acc;
+      margin-bottom: 30px;
+    }
+    button {
+      background-color: #007acc;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin: 5px 0;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+    button:disabled {
+      background-color: #a0c4ff;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background-color: #005fa3;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      transition: border-color 0.3s ease;
+    }
+    input[type="text"]:focus {
+      border-color: #007acc;
+      outline: none;
+    }
+    #status {
+      font-weight: bold;
+      color: #007acc;
+      text-align: center;
+      margin: 20px 0;
+      min-height: 24px;
+      font-size: 1rem;
+    }
+    .led {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 10px;
+      background-color: #ccc;
+    }
+    .led.on {
+      background-color: #00ff00;
+    }
   </style>
 </head>
 <body>
-  <h1>ESP32 BLE Steuerung</h1>
-  <button onclick="connect()">🔌 Verbinden</button>
-  <button onclick="disconnect()">❌ Trennen</button><br><br>
-  <button onclick="sendCommand('1')">💡 LED AN</button>
-  <button onclick="sendCommand('0')">💡 LED AUS</button>
+  <h1>Warnblinker Vespa GTS <span class="led" id="ledIndicator"></span></h1>
 
-  <script>
-    let bleDevice;
-    let bleCharacteristic;
+  <button id="connectBtn">Verbinden</button>
+  <button id="disconnectBtn" disabled>Trennen</button>
 
-    const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
-    const CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+  <input type="text" id="inputCode" placeholder="Code eingeben" disabled />
+  <button id="sendCodeBtn" disabled>Code speichern</button>
 
-    async function connect() {
-      try {
-        bleDevice = await navigator.bluetooth.requestDevice({
-          filters: [{ namePrefix: 'ESP32' }],
-          optionalServices: [SERVICE_UUID]
-        });
+  <button id="clearBtn" disabled>Code löschen (CLEAR)</button>
+  <button id="ledOffBtn" disabled>LED aus (0)</button>
 
-        const server = await bleDevice.gatt.connect();
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+  <div id="status">Nicht verbunden</div>
 
-        alert('✅ Verbunden mit ESP32');
-      } catch (error) {
-        alert('❌ Verbindung fehlgeschlagen: ' + error);
-      }
+<script>
+  let bleDevice;
+  let characteristic;
+  let hasCode = false;
+
+  const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+  const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+
+  const connectBtn = document.getElementById('connectBtn');
+  const disconnectBtn = document.getElementById('disconnectBtn');
+  const sendCodeBtn = document.getElementById('sendCodeBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const ledOffBtn = document.getElementById('ledOffBtn');
+  const inputCode = document.getElementById('inputCode');
+  const statusSpan = document.getElementById('status');
+  const ledIndicator = document.getElementById('ledIndicator');
+
+  function updateSendButtonText() {
+    sendCodeBtn.textContent = hasCode ? 'Senden' : 'Code speichern';
+  }
+
+  connectBtn.onclick = async () => {
+    try {
+      statusSpan.textContent = 'Verbindung wird aufgebaut...';
+      
+      bleDevice = await navigator.bluetooth.requestDevice({
+        filters: [{ name: 'Warnblinker Vespa GTS' }],
+        optionalServices: [SERVICE_UUID]
+      });
+
+      bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+      const server = await bleDevice.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+      await characteristic.startNotifications();
+      characteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+
+      const initialValue = await characteristic.readValue();
+      handleNotifications({ target: { value: initialValue } });
+
+      updateUIConnected(true);
+      
+    } catch (error) {
+      statusSpan.textContent = 'Fehler: ' + error.message;
+      console.error('Verbindungsfehler:', error);
     }
+  };
 
-    async function sendCommand(cmd) {
-      if (!bleCharacteristic) {
-        alert('Bitte zuerst verbinden.');
-        return;
-      }
+  disconnectBtn.onclick = () => {
+    if (bleDevice && bleDevice.gatt.connected) {
+      bleDevice.gatt.disconnect();
+    }
+  };
 
+  function onDisconnected() {
+    updateUIConnected(false);
+    statusSpan.textContent = 'Verbindung getrennt';
+    ledIndicator.classList.remove('on');
+  }
+
+  sendCodeBtn.onclick = async () => {
+    const code = inputCode.value.trim();
+    if (!code) {
+      alert('Bitte Code eingeben');
+      return;
+    }
+    await writeToCharacteristic(code);
+    inputCode.value = '';
+  };
+
+  clearBtn.onclick = async () => {
+    await writeToCharacteristic('CLEAR');
+  };
+
+  ledOffBtn.onclick = async () => {
+    await writeToCharacteristic('0');
+  };
+
+  async function writeToCharacteristic(value) {
+    if (!characteristic) {
+      statusSpan.textContent = 'Nicht verbunden';
+      return;
+    }
+    try {
       const encoder = new TextEncoder();
-      await bleCharacteristic.writeValue(encoder.encode(cmd.trim()));
+      await characteristic.writeValue(encoder.encode(value));
+    } catch (e) {
+      statusSpan.textContent = 'Fehler beim Senden: ' + e.message;
+      console.error('Sendefehler:', e);
     }
+  }
 
-    function disconnect() {
-      if (bleDevice && bleDevice.gatt.connected) {
-        bleDevice.gatt.disconnect();
-        alert('🔌 Verbindung getrennt.');
-      } else {
-        alert('⚠️ Kein Gerät verbunden.');
-      }
+  function handleNotifications(event) {
+    const decoder = new TextDecoder();
+    const value = decoder.decode(event.target.value);
+    console.log('Empfangene Notifikation:', value);
+    
+    if (value === 'STATUS:NO_CODE') {
+      statusSpan.textContent = 'Verbunden - Kein Code gespeichert';
+      ledIndicator.classList.remove('on');
+      hasCode = false;
+    } else if (value === 'STATUS:CODE_SET') {
+      statusSpan.textContent = 'Verbunden - Code gespeichert';
+      hasCode = true;
+    } else if (value === 'STATUS:CODE_OK') {
+      statusSpan.textContent = 'Verbunden - Code akzeptiert (LED an)';
+      ledIndicator.classList.add('on');
+    } else if (value === 'STATUS:WRONG_CODE') {
+      statusSpan.textContent = 'Verbunden - Falscher Code';
+    } else if (value === 'STATUS:LED_OFF') {
+      statusSpan.textContent = 'Verbunden - LED aus';
+      ledIndicator.classList.remove('on');
     }
-  </script>
+    
+    updateSendButtonText();
+  }
+
+  function updateUIConnected(connected) {
+    connectBtn.disabled = connected;
+    disconnectBtn.disabled = !connected;
+    sendCodeBtn.disabled = !connected;
+    clearBtn.disabled = !connected;
+    ledOffBtn.disabled = !connected;
+    inputCode.disabled = !connected;
+  }
+
+  // Initialen Button-Text setzen
+  updateSendButtonText();
+</script>
 </body>
 </html>
