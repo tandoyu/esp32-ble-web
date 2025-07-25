@@ -14,6 +14,17 @@
       font-size: 18px;
       cursor: pointer;
     }
+    #status {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .connected {
+      color: green;
+    }
+    .disconnected {
+      color: red;
+    }
   </style>
 </head>
 <body>
@@ -23,6 +34,8 @@
   <button onclick="sendCommand('1')">💡 LED AN</button>
   <button onclick="sendCommand('0')">💡 LED AUS</button><br>
   <button onclick="disconnect()">❌ Trennen</button>
+
+  <div id="status" class="disconnected">🔴 Nicht verbunden</div>
 
   <script>
     let bleDevice;
@@ -42,7 +55,13 @@
         const service = await server.getPrimaryService(SERVICE_UUID);
         bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
+        updateStatus(true);
         alert('Verbunden mit ESP32');
+
+        // Automatisch Status aktualisieren wenn getrennt wird
+        bleDevice.addEventListener('gattserverdisconnected', () => {
+          updateStatus(false);
+        });
       } catch (error) {
         alert('Verbindung fehlgeschlagen: ' + error);
       }
@@ -66,10 +85,22 @@
 
       if (bleDevice.gatt.connected) {
         bleDevice.gatt.disconnect();
+        updateStatus(false);
         bleDevice = null;
         alert("Verbindung getrennt.");
       } else {
         alert("Gerät ist bereits getrennt.");
+      }
+    }
+
+    function updateStatus(isConnected) {
+      const statusDiv = document.getElementById('status');
+      if (isConnected) {
+        statusDiv.textContent = '🟢 Verbunden';
+        statusDiv.className = 'connected';
+      } else {
+        statusDiv.textContent = '🔴 Nicht verbunden';
+        statusDiv.className = 'disconnected';
       }
     }
   </script>
