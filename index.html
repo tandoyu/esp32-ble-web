@@ -9,7 +9,7 @@
       font-size: 18px;
       margin: 10px;
     }
-    #controls { display: none; }
+    #controls, #resetBtn { display: none; }
     #status { margin-top: 20px; font-weight: bold; }
   </style>
 </head>
@@ -20,7 +20,7 @@
   <button onclick="disconnect()">❌ Trennen</button><br>
 
   <div id="auth">
-    <input id="codeInput" placeholder="Zugangscode eingeben" />
+    <input id="codeInput" placeholder="Zugangscode eingeben / neu setzen" />
     <button onclick="sendCode()">✅ Code senden</button>
   </div>
 
@@ -28,6 +28,8 @@
     <button onclick="sendCommand('1')">💡 LED AN</button>
     <button onclick="sendCommand('0')">💡 LED AUS</button>
   </div>
+
+  <button id="resetBtn" onclick="resetCode()">♻️ Zugangscode zurücksetzen</button>
 
   <div id="status">Status: Nicht verbunden</div>
 
@@ -52,6 +54,9 @@
 
         document.getElementById('status').textContent = '✅ Verbunden mit ESP32';
         document.getElementById('auth').style.display = 'block';
+        document.getElementById('resetBtn').style.display = 'inline-block';
+        document.getElementById('controls').style.display = 'none';
+        accessGranted = false;
       } catch (error) {
         document.getElementById('status').textContent = '❌ Verbindung fehlgeschlagen: ' + error;
       }
@@ -63,6 +68,7 @@
         document.getElementById('status').textContent = '🔌 Verbindung getrennt';
         document.getElementById('auth').style.display = 'block';
         document.getElementById('controls').style.display = 'none';
+        document.getElementById('resetBtn').style.display = 'none';
         accessGranted = false;
       }
     }
@@ -72,10 +78,12 @@
       if (!bleCharacteristic || !code) return;
       const encoder = new TextEncoder();
       await bleCharacteristic.writeValue(encoder.encode(code.trim()));
+
+      // Wir gehen davon aus, dass der ESP den Code akzeptiert
+      accessGranted = true;
       document.getElementById('controls').style.display = 'block';
       document.getElementById('auth').style.display = 'none';
       document.getElementById('status').textContent = '✅ Zugriff freigegeben';
-      accessGranted = true;
     }
 
     async function sendCommand(cmd) {
@@ -85,6 +93,18 @@
       }
       const encoder = new TextEncoder();
       await bleCharacteristic.writeValue(encoder.encode(cmd.trim()));
+    }
+
+    async function resetCode() {
+      if (!bleCharacteristic) return;
+      const encoder = new TextEncoder();
+      await bleCharacteristic.writeValue(encoder.encode("RESET_CODE"));
+
+      document.getElementById('status').textContent = '♻️ Zugangscode zurückgesetzt. Bitte neuen Code eingeben.';
+      document.getElementById('auth').style.display = 'block';
+      document.getElementById('controls').style.display = 'none';
+      accessGranted = false;
+      document.getElementById('codeInput').value = "";
     }
   </script>
 </body>
