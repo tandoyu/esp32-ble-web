@@ -1,95 +1,91 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-<meta charset="UTF-8" />
-<title>ESP32 BLE Steuerung</title>
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; }
-  button, input { margin: 5px 0; padding: 8px; font-size: 16px; }
-</style>
+  <title>ESP32 BLE Zugang</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 40px; }
+    button, input {
+      padding: 12px 20px;
+      font-size: 18px;
+      margin: 10px;
+    }
+    #controls { display: none; }
+    #status { margin-top: 20px; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <h1>ESP32 BLE Steuerung</h1>
-  <button id="connectBtn">Verbinden</button><br />
+  <h1>🔐 ESP32 BLE Steuerung</h1>
 
-  <label for="codeInput">Zugangscode eingeben:</label><br />
-  <input type="text" id="codeInput" placeholder="Code" />
-  <button id="sendCodeBtn" disabled>Code senden</button><br />
+  <button onclick="connect()">🔌 Verbinden</button>
+  <button onclick="disconnect()">❌ Trennen</button><br>
 
-  <button id="ledOnBtn" disabled>LED AN</button>
-  <button id="ledOffBtn" disabled>LED AUS</button><br />
+  <div id="auth">
+    <input id="codeInput" placeholder="Zugangscode eingeben" />
+    <button onclick="sendCode()">✅ Code senden</button>
+  </div>
 
-  <div id="log"></div>
+  <div id="controls">
+    <button onclick="sendCommand('1')">💡 LED AN</button>
+    <button onclick="sendCommand('0')">💡 LED AUS</button>
+  </div>
 
-<script>
-  const SERVICE_UUID = '12345678-1234-1234-1234-123456789abc';
-  const CHARACTERISTIC_UUID = 'abcdefab-1234-5678-1234-abcdefabcdef';
+  <div id="status">Status: Nicht verbunden</div>
 
-  let bleDevice;
-  let characteristic;
+  <script>
+    let bleDevice;
+    let bleCharacteristic;
+    let accessGranted = false;
 
-  const log = msg => {
-    const logDiv = document.getElementById('log');
-    logDiv.innerHTML += msg + '<br />';
-    logDiv.scrollTop = logDiv.scrollHeight;
-  };
+    const SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+    const CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
 
-  document.getElementById('connectBtn').onclick = async () => {
-    try {
-      log('Suche BLE-Gerät...');
-      bleDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }]
-      });
+    async function connect() {
+      try {
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'ESP32' }],
+          optionalServices: [SERVICE_UUID]
+        });
 
-      log('Verbinde mit GATT Server...');
-      const server = await bleDevice.gatt.connect();
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
-      log('Hole Service...');
-      const service = await server.getPrimaryService(SERVICE_UUID);
-
-      log('Hole Characteristic...');
-      characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
-      document.getElementById('sendCodeBtn').disabled = false;
-      document.getElementById('ledOnBtn').disabled = false;
-      document.getElementById('ledOffBtn').disabled = false;
-
-      log('Verbunden! Du kannst jetzt Code senden oder LED schalten.');
-    } catch (error) {
-      log('Fehler: ' + error);
+        document.getElementById('status').textContent = '✅ Verbunden mit ESP32';
+        document.getElementById('auth').style.display = 'block';
+      } catch (error) {
+        document.getElementById('status').textContent = '❌ Verbindung fehlgeschlagen: ' + error;
+      }
     }
-  };
 
-  async function writeValue(value) {
-    if (!characteristic) {
-      log('Nicht verbunden!');
-      return;
+    function disconnect() {
+      if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+        document.getElementById('status').textContent = '🔌 Verbindung getrennt';
+        document.getElementById('auth').style.display = 'block';
+        document.getElementById('controls').style.display = 'none';
+        accessGranted = false;
+      }
     }
-    try {
+
+    async function sendCode() {
+      const code = document.getElementById('codeInput').value;
+      if (!bleCharacteristic || !code) return;
       const encoder = new TextEncoder();
-      await characteristic.writeValue(encoder.encode(value));
-      log('Gesendet: ' + value);
-    } catch (error) {
-      log('Fehler beim Senden: ' + error);
+      await bleCharacteristic.writeValue(encoder.encode(code.trim()));
+      document.getElementById('controls').style.display = 'block';
+      document.getElementById('auth').style.display = 'none';
+      document.getElementById('status').textContent = '✅ Zugriff freigegeben';
+      accessGranted = true;
     }
-  }
 
-  document.getElementById('sendCodeBtn').onclick = () => {
-    const code = document.getElementById('codeInput').value.trim();
-    if (code.length === 0) {
-      alert('Bitte Code eingeben!');
-      return;
+    async function sendCommand(cmd) {
+      if (!bleCharacteristic || !accessGranted) {
+        document.getElementById('status').textContent = '⚠️ Zugriff verweigert oder nicht verbunden.';
+        return;
+      }
+      const encoder = new TextEncoder();
+      await bleCharacteristic.writeValue(encoder.encode(cmd.trim()));
     }
-    writeValue(code);
-  };
-
-  document.getElementById('ledOnBtn').onclick = () => {
-    writeValue('1');
-  };
-
-  document.getElementById('ledOffBtn').onclick = () => {
-    writeValue('0');
-  };
-</script>
+  </script>
 </body>
 </html>
