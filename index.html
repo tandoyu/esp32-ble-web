@@ -84,7 +84,8 @@
   <button id="sendCodeBtn" disabled>Code speichern</button>
 
   <button id="clearBtn" disabled>Code löschen</button>
-  <button id="ledOffBtn" disabled>LED aus</button>
+  <button id="ledOnBtn" disabled>Warnblinker an</button>
+  <button id="ledOffBtn" disabled>Warnblinker aus</button>
 
   <div id="status">Nicht verbunden</div>
 
@@ -92,6 +93,7 @@
   let bleDevice;
   let characteristic;
   let hasCode = false;
+  let isAuthenticated = false;
 
   const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
   const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
@@ -100,6 +102,7 @@
   const disconnectBtn = document.getElementById('disconnectBtn');
   const sendCodeBtn = document.getElementById('sendCodeBtn');
   const clearBtn = document.getElementById('clearBtn');
+  const ledOnBtn = document.getElementById('ledOnBtn');
   const ledOffBtn = document.getElementById('ledOffBtn');
   const inputCode = document.getElementById('inputCode');
   const statusSpan = document.getElementById('status');
@@ -148,6 +151,7 @@
     updateUIConnected(false);
     statusSpan.textContent = 'Verbindung getrennt';
     ledIndicator.classList.remove('on');
+    isAuthenticated = false;
   }
 
   sendCodeBtn.onclick = async () => {
@@ -162,6 +166,10 @@
 
   clearBtn.onclick = async () => {
     await writeToCharacteristic('CLEAR');
+  };
+
+  ledOnBtn.onclick = async () => {
+    await writeToCharacteristic('1');
   };
 
   ledOffBtn.onclick = async () => {
@@ -191,17 +199,26 @@
       statusSpan.textContent = 'Verbunden - Kein Code gespeichert';
       ledIndicator.classList.remove('on');
       hasCode = false;
+      isAuthenticated = true; // Kein Code benötigt
     } else if (value === 'STATUS:CODE_SET') {
       statusSpan.textContent = 'Verbunden - Code gespeichert';
       hasCode = true;
     } else if (value === 'STATUS:CODE_OK') {
-      statusSpan.textContent = 'Verbunden - Code akzeptiert (LED an)';
+      statusSpan.textContent = 'Verbunden - Code akzeptiert (Warnblinker an)';
       ledIndicator.classList.add('on');
+      isAuthenticated = true;
     } else if (value === 'STATUS:WRONG_CODE') {
       statusSpan.textContent = 'Verbunden - Falscher Code';
+      isAuthenticated = false;
     } else if (value === 'STATUS:LED_OFF') {
-      statusSpan.textContent = 'Verbunden - LED aus';
+      statusSpan.textContent = 'Verbunden - Warnblinker aus';
       ledIndicator.classList.remove('on');
+    } else if (value === 'STATUS:LED_ON') {
+      statusSpan.textContent = 'Verbunden - Warnblinker an';
+      ledIndicator.classList.add('on');
+    } else if (value === 'STATUS:NEED_AUTH') {
+      statusSpan.textContent = 'Verbunden - Authentifizierung erforderlich';
+      alert('Bitte zuerst den richtigen Code eingeben!');
     }
     
     updateSendButtonText();
@@ -212,6 +229,7 @@
     disconnectBtn.disabled = !connected;
     sendCodeBtn.disabled = !connected;
     clearBtn.disabled = !connected;
+    ledOnBtn.disabled = !connected;
     ledOffBtn.disabled = !connected;
     inputCode.disabled = !connected;
   }
