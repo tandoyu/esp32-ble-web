@@ -14,13 +14,12 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 650px;
             margin: 0 auto;
             padding: 20px;
             background-color: #F0F8FF;
             color: var(--text-dark);
-            -webkit-text-size-adjust: 100%;
         }
         
         .header {
@@ -70,7 +69,6 @@
             min-width: 220px;
             transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0, 91, 170, 0.3);
-            -webkit-appearance: none;
         }
         
         button:hover {
@@ -124,7 +122,6 @@
             max-width: 250px;
             font-size: 16px;
             transition: border 0.3s;
-            -webkit-appearance: none;
         }
         
         input:focus {
@@ -168,25 +165,6 @@
             color: var(--vespa-accent);
         }
         
-        .compatibility-warning {
-            display: none;
-            background: #FFF3CD;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #FFC107;
-        }
-        
-        .ios-alternative {
-            display: none;
-            background: #E3F2FD;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid var(--vespa-lightblue);
-        }
-        
         @media (max-width: 600px) {
             body {
                 padding: 15px;
@@ -207,21 +185,6 @@
     </style>
 </head>
 <body>
-    <div id="iosWarning" class="ios-alternative">
-        <h3>Für iPhone-Nutzer:</h3>
-        <p>Da Web Bluetooth auf iOS nicht vollständig unterstützt wird, empfehlen wir folgende Alternativen:</p>
-        <ol>
-            <li><strong>WebBLE App</strong> aus dem App Store installieren</li>
-            <li><strong>BLE Scanner App</strong> mit folgenden Einstellungen:
-                <ul>
-                    <li>Service UUID: FFE0</li>
-                    <li>RX Characteristic: FFE1</li>
-                    <li>TX Characteristic: FFE2</li>
-                </ul>
-            </li>
-        </ol>
-    </div>
-
     <div class="header">
         <div class="logo">BLINK<span>SAVE</span> PRO</div>
         <h1>Intelligente Blinkersteuerung</h1>
@@ -261,40 +224,15 @@
         let rxCharacteristic;
         let codeIsSet = false;
         let isAuthenticated = false;
-        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-
-        // Initiale Prüfung der Browserkompatibilität
-        function checkCompatibility() {
-            if (isIOS) {
-                document.getElementById('iosWarning').style.display = 'block';
-                document.getElementById('connectBtn').disabled = true;
-                document.getElementById('connectionStatus').textContent = 
-                    "iOS benötigt spezielle BLE-Apps (siehe Hinweis oben)";
-            } else if (!navigator.bluetooth) {
-                document.getElementById('connectionStatus').textContent = 
-                    "Web Bluetooth wird von diesem Browser nicht unterstützt";
-                document.getElementById('connectBtn').disabled = true;
-            }
-        }
 
         async function connect() {
             try {
                 document.getElementById('connectBtn').disabled = true;
                 document.getElementById('connectBtn').textContent = "Verbinde...";
                 
-                // Für iOS gibt es keine direkte Verbindungsmöglichkeit
-                if (isIOS) {
-                    throw new Error("Bitte eine kompatible BLE-App verwenden");
-                }
-
                 device = await navigator.bluetooth.requestDevice({
                     filters: [{ name: "BlinkSave Pro" }],
                     optionalServices: [0xFFE0]
-                }).catch(err => {
-                    if (err.code === 8) {
-                        throw new Error("Gerät nicht gefunden. Bitte einschalten!");
-                    }
-                    throw err;
                 });
                 
                 const server = await device.gatt.connect();
@@ -306,7 +244,7 @@
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
                 await txCharacteristic.startNotifications();
                 
-                document.getElementById('connectionStatus').textContent = "Verbunden mit " + (device.name || "BlinkSave Pro");
+                document.getElementById('connectionStatus').textContent = "Verbunden";
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('blinkerSection').style.display = 'block';
@@ -314,20 +252,8 @@
                 await sendCommand("GETSTATUS");
                 
             } catch(error) {
-                console.error('Verbindungsfehler:', error);
-                let errorMsg = "Fehler: ";
-                
-                if (error.message.includes("User cancelled")) {
-                    errorMsg = "Abgebrochen - bitte erneut versuchen";
-                } else if (error.message.includes("Gerät nicht gefunden")) {
-                    errorMsg = "BlinkSave Pro nicht gefunden - bitte einschalten";
-                } else if (error.message.includes("Bluetooth")) {
-                    errorMsg = "Bluetooth nicht aktiviert - bitte in Einstellungen prüfen";
-                } else {
-                    errorMsg += error.message;
-                }
-                
-                document.getElementById('connectionStatus').textContent = errorMsg;
+                console.error('Fehler:', error);
+                document.getElementById('connectionStatus').textContent = "Fehler: " + error.message;
                 document.getElementById('connectBtn').disabled = false;
                 document.getElementById('connectBtn').textContent = "Erneut versuchen";
             }
@@ -335,20 +261,22 @@
 
         function handleNotifications(event) {
             const value = new TextDecoder().decode(event.target.value);
-            console.log("Empfangene Daten:", value);
+            console.log("Empfangen:", value);
             
+            // Statusanzeige
             if (value.includes("BLINKER:1")) {
                 document.getElementById('blinkerStatus').textContent = "AKTIV";
                 document.getElementById('blinkerIndicator').style.backgroundColor = '#FFD700';
-                document.getElementById('blinkerIndicator').style.animation = 'blink 1s infinite';
+                document.getElementById('blinkerIndicator').style.boxShadow = '0 0 15px #FFD700';
                 document.getElementById('blinkerOnBtn').textContent = "Aktiv (läuft)";
             } else if (value.includes("BLINKER:0")) {
                 document.getElementById('blinkerStatus').textContent = "INAKTIV";
                 document.getElementById('blinkerIndicator').style.backgroundColor = '#DDDDDD';
-                document.getElementById('blinkerIndicator').style.animation = 'none';
+                document.getElementById('blinkerIndicator').style.boxShadow = '0 0 15px transparent';
                 document.getElementById('blinkerOnBtn').textContent = "Aktivieren";
             }
             
+            // Code Status
             if (value.includes("CODE:SET")) {
                 codeIsSet = true;
                 document.getElementById('codeState').textContent = "Sicherheitscode gesetzt";
@@ -357,6 +285,7 @@
                 document.getElementById('codeState').textContent = "Kein Sicherheitscode";
             }
             
+            // Authentifizierung
             if (value.includes("AUTH:1")) {
                 isAuthenticated = true;
                 updateUI();
@@ -365,6 +294,7 @@
                 updateUI();
             }
             
+            // Nachrichten
             const authMsg = document.getElementById('authMessage');
             if (value === "AUTH_OK") {
                 authMsg.textContent = "Erfolgreich authentifiziert!";
@@ -386,14 +316,14 @@
                 if (codeIsSet) {
                     codeArea.innerHTML = `
                         <p>Bitte geben Sie Ihren Sicherheitscode ein:</p>
-                        <input type="password" id="codeInput" placeholder="Sicherheitscode" autocomplete="off">
+                        <input type="password" id="codeInput" placeholder="Sicherheitscode">
                         <button id="authBtn">Authentifizieren</button>
                     `;
                     document.getElementById('authBtn').addEventListener('click', authenticate);
                 } else {
                     codeArea.innerHTML = `
                         <p>Bitte legen Sie einen Sicherheitscode fest (4-16 Zeichen):</p>
-                        <input type="password" id="newCode" placeholder="Neuer Sicherheitscode" autocomplete="off">
+                        <input type="password" id="newCode" placeholder="Neuer Sicherheitscode">
                         <button id="setCodeBtn">Code speichern</button>
                     `;
                     document.getElementById('setCodeBtn').addEventListener('click', setCode);
@@ -419,56 +349,113 @@
         }
 
         async function sendCommand(cmd) {
-            if (!rxCharacteristic) {
-                console.error("Keine RX-Characteristic verfügbar");
-                return;
-            }
-            
-            try {
-                const encoder = new TextEncoder();
-                await rxCharacteristic.writeValue(encoder.encode(cmd));
-                console.log("Befehl gesendet:", cmd);
-            } catch (error) {
-                console.error("Fehler beim Senden des Befehls:", error);
-                if (error.message.includes("not connected")) {
-                    document.getElementById('connectionStatus').textContent = "Verbindung verloren - bitte neu verbinden";
-                    location.reload();
-                }
+            if (!rxCharacteristic) return;
+            const encoder = new TextEncoder();
+            await rxCharacteristic.writeValue(encoder.encode(cmd));
+        }
+
+        async function authenticate() {
+            const code = document.getElementById('codeInput').value;
+            if (code.length >= 4) {
+                document.getElementById('authBtn').disabled = true;
+                document.getElementById('authBtn').textContent = "Prüfe...";
+                await sendCommand("CHECKCODE:" + code);
+                document.getElementById('authBtn').disabled = false;
+                document.getElementById('authBtn').textContent = "Authentifizieren";
+            } else {
+                alert("Der Code muss mindestens 4 Zeichen lang sein!");
             }
         }
 
-        // Rest der Funktionen (authenticate, setCode, logout, etc.) bleibt gleich wie im vorherigen Beispiel
+        async function setCode() {
+            const code = document.getElementById('newCode').value;
+            if (code.length >= 4 && code.length <= 16) {
+                document.getElementById('setCodeBtn').disabled = true;
+                document.getElementById('setCodeBtn').textContent = "Speichere...";
+                await sendCommand("SETCODE:" + code);
+                document.getElementById('setCodeBtn').disabled = false;
+                document.getElementById('setCodeBtn').textContent = "Code speichern";
+                alert("Sicherheitscode erfolgreich gespeichert!");
+            } else {
+                alert("Der Code muss zwischen 4 und 16 Zeichen lang sein!");
+            }
+        }
+
+        async function logout() {
+            await sendCommand("LOGOUT");
+        }
+
+        function showCodeChange() {
+            const codeArea = document.getElementById('codeInputArea');
+            codeArea.innerHTML = `
+                <p>Aktuellen Sicherheitscode bestätigen:</p>
+                <input type="password" id="currentCode" placeholder="Aktueller Code">
+                <p>Neuen Sicherheitscode eingeben:</p>
+                <input type="password" id="newChangeCode" placeholder="Neuer Code (4-16 Zeichen)">
+                <div class="button-group">
+                    <button id="confirmChangeBtn">Ändern</button>
+                    <button id="cancelChangeBtn">Abbrechen</button>
+                </div>
+            `;
+            document.getElementById('confirmChangeBtn').addEventListener('click', changeCode);
+            document.getElementById('cancelChangeBtn').addEventListener('click', updateUI);
+        }
+
+        async function changeCode() {
+            const current = document.getElementById('currentCode').value;
+            const newCode = document.getElementById('newChangeCode').value;
+            
+            if (current && newCode.length >= 4 && newCode.length <= 16) {
+                document.getElementById('confirmChangeBtn').disabled = true;
+                document.getElementById('confirmChangeBtn').textContent = "Prüfe...";
+                await sendCommand("CHECKCODE:" + current);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                if (isAuthenticated) {
+                    document.getElementById('confirmChangeBtn').textContent = "Speichere...";
+                    await sendCommand("SETCODE:" + newCode);
+                    alert("Sicherheitscode erfolgreich geändert!");
+                    updateUI();
+                }
+                document.getElementById('confirmChangeBtn').disabled = false;
+                document.getElementById('confirmChangeBtn').textContent = "Ändern";
+            } else {
+                alert("Ungültige Eingabe! Bitte geben Sie den aktuellen Code ein und einen neuen Code mit 4-16 Zeichen.");
+            }
+        }
+
+        // Event Listener
+        document.getElementById('connectBtn').addEventListener('click', connect);
+        document.getElementById('blinkerOnBtn').addEventListener('click', async () => {
+            document.getElementById('blinkerOnBtn').disabled = true;
+            document.getElementById('blinkerOnBtn').textContent = "Aktiviere...";
+            await sendCommand("BLINKSAVE_EIN");
+            document.getElementById('blinkerOnBtn').disabled = false;
+        });
+        document.getElementById('blinkerOffBtn').addEventListener('click', async () => {
+            document.getElementById('blinkerOffBtn').disabled = true;
+            document.getElementById('blinkerOffBtn').textContent = "Deaktiviere...";
+            await sendCommand("BLINKSAVE_AUS");
+            document.getElementById('blinkerOffBtn').disabled = false;
+        });
+
+        // Blinkanimation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes blink {
+                0% { opacity: 1; }
+                50% { opacity: 0.3; box-shadow: 0 0 20px #FFD700; }
+                100% { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
 
         // Initialisierung
-        document.addEventListener('DOMContentLoaded', function() {
-            checkCompatibility();
-            
-            // Event Listener für Buttons
-            document.getElementById('connectBtn').addEventListener('click', connect);
-            document.getElementById('blinkerOnBtn').addEventListener('click', async () => {
-                document.getElementById('blinkerOnBtn').disabled = true;
-                document.getElementById('blinkerOnBtn').textContent = "Aktiviere...";
-                await sendCommand("BLINKSAVE_EIN");
-                document.getElementById('blinkerOnBtn').disabled = false;
-            });
-            document.getElementById('blinkerOffBtn').addEventListener('click', async () => {
-                document.getElementById('blinkerOffBtn').disabled = true;
-                document.getElementById('blinkerOffBtn').textContent = "Deaktiviere...";
-                await sendCommand("BLINKSAVE_AUS");
-                document.getElementById('blinkerOffBtn').disabled = false;
-            });
-
-            // Blinkanimation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes blink {
-                    0% { opacity: 1; }
-                    50% { opacity: 0.3; box-shadow: 0 0 20px #FFD700; }
-                    100% { opacity: 1; }
-                }
-            `;
-            document.head.appendChild(style);
-        });
+        if (!navigator.bluetooth) {
+            document.getElementById('connectionStatus').textContent = 
+                "Web Bluetooth wird von diesem Browser nicht unterstützt";
+            document.getElementById('connectBtn').disabled = true;
+        }
     </script>
 </body>
 </html>
