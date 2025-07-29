@@ -1,52 +1,111 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
     <title>BlinkSave Pro</title>
     <style>
-        :root {
-            --vespa-blue: #005BAA;
-            --vespa-lightblue: #4D9DE0;
-            --vespa-accent: #FFD700;
-            --text-light: #FFFFFF;
-            --text-dark: #333333;
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        /* ... (dein kompletter Style bleibt unverändert) ... */
+        .header {
+            background-color: #d82e21; /* Vespa Rot */
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #d82e21;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            min-width: 200px;
+        }
+        button:hover {
+            background-color: #b8241a;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #blinkerIndicator {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-block;
+            background: grey;
+            margin-left: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        .status {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        input {
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 200px;
+        }
+        .error {
+            color: #d82e21;
+            margin: 10px 0;
+        }
+        .success {
+            color: #28a745;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">BLINK<span>SAVE</span> PRO</div>
-        <h1>Intelligente Blinkersteuerung</h1>
+        <h1>BlinkSave Pro</h1>
     </div>
     
     <div class="section">
-        <h2>Bluetooth-Verbindung</h2>
+        <h2>Verbindung</h2>
         <button id="connectBtn">Mit BlinkSave Pro verbinden</button>
         <div class="status">
-            <strong>Verbindungsstatus:</strong> <span id="connectionStatus">Getrennt</span>
+            <strong>Status:</strong> <span id="connectionStatus">Nicht verbunden</span>
         </div>
     </div>
-
+    
     <div id="authSection" class="section" style="display:none;">
-        <h2>Sicherheitsmanagement</h2>
+        <h2>Sicherheit</h2>
         <div class="status">
-            <strong>Sicherheitsstatus:</strong> <span id="codeState">Nicht initialisiert</span>
+            <strong>Code Status:</strong> <span id="codeState">-</span>
         </div>
         <div id="codeInputArea"></div>
         <div id="authMessage" style="display:none;"></div>
     </div>
-
+    
     <div id="blinkerSection" class="section" style="display:none;">
-        <h2>Systemsteuerung <span id="blinkerIndicator"></span></h2>
+        <h2>BlinkSave <span id="blinkerIndicator"></span></h2>
         <div class="status">
-            <strong>Aktueller Modus:</strong> <span id="blinkerStatus">---</span>
+            <strong>Aktueller Status:</strong> <span id="blinkerStatus">-</span>
         </div>
-        <div class="button-group">
-            <button id="blinkerOnBtn" disabled>Aktivieren</button>
-            <button id="blinkerOffBtn" disabled>Deaktivieren</button>
-        </div>
+        <button id="blinkerOnBtn" disabled>BlinkSave EIN</button>
+        <button id="blinkerOffBtn" disabled>BlinkSave AUS</button>
     </div>
 
     <script>
@@ -58,87 +117,58 @@
 
         async function connect() {
             try {
-                updateStatus("Verbindung wird aufgebaut...");
-                document.getElementById('connectBtn').disabled = true;
-                document.getElementById('connectBtn').textContent = "Verbinde...";
-
                 device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
+                    filters: [{ name: "BlinkSave Pro" }],
                     optionalServices: [0xFFE0]
                 });
-
-                if (device.name !== "BlinkSave Pro") {
-                    alert("Falsches Gerät ausgewählt: " + device.name);
-                    updateStatus("Falsches Gerät ausgewählt");
-                    document.getElementById('connectBtn').disabled = false;
-                    document.getElementById('connectBtn').textContent = "Erneut versuchen";
-                    return;
-                }
-
-                device.addEventListener('gattserverdisconnected', onDisconnected);
-
+                
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(0xFFE0);
-
+                
                 txCharacteristic = await service.getCharacteristic(0xFFE2);
                 rxCharacteristic = await service.getCharacteristic(0xFFE1);
-
+                
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
                 await txCharacteristic.startNotifications();
-
-                updateStatus("Verbunden");
+                
+                document.getElementById('connectionStatus').textContent = "Verbunden";
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('blinkerSection').style.display = 'block';
-
+                
                 await sendCommand("GETSTATUS");
-
-            } catch (error) {
-                console.error("Verbindungsfehler:", error);
-                alert("Bluetooth-Fehler: " + error.message);
-                updateStatus("Fehler: " + error.message);
-                document.getElementById('connectBtn').disabled = false;
-                document.getElementById('connectBtn').textContent = "Erneut versuchen";
+                
+            } catch(error) {
+                console.error('Fehler:', error);
+                document.getElementById('connectionStatus').textContent = "Fehler: " + error.message;
             }
-        }
-
-        function updateStatus(msg) {
-            document.getElementById('connectionStatus').textContent = msg;
-        }
-
-        function onDisconnected() {
-            updateStatus("Verbindung getrennt");
-            document.getElementById('connectBtn').style.display = 'block';
-            document.getElementById('connectBtn').disabled = false;
-            document.getElementById('connectBtn').textContent = "Neu verbinden";
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('blinkerSection').style.display = 'none';
         }
 
         function handleNotifications(event) {
             const value = new TextDecoder().decode(event.target.value);
             console.log("Empfangen:", value);
-
+            
+            // Blinker Status
             if (value.includes("BLINKER:1")) {
                 document.getElementById('blinkerStatus').textContent = "AKTIV";
-                document.getElementById('blinkerIndicator').style.backgroundColor = '#FFD700';
-                document.getElementById('blinkerIndicator').style.boxShadow = '0 0 15px #FFD700';
-                document.getElementById('blinkerOnBtn').textContent = "Aktiv (läuft)";
+                document.getElementById('blinkerIndicator').style.backgroundColor = '#d82e21';
+                document.getElementById('blinkerIndicator').style.animation = "blink 1s infinite";
             } else if (value.includes("BLINKER:0")) {
                 document.getElementById('blinkerStatus').textContent = "INAKTIV";
-                document.getElementById('blinkerIndicator').style.backgroundColor = '#DDDDDD';
-                document.getElementById('blinkerIndicator').style.boxShadow = '0 0 15px transparent';
-                document.getElementById('blinkerOnBtn').textContent = "Aktivieren";
+                document.getElementById('blinkerIndicator').style.backgroundColor = 'grey';
+                document.getElementById('blinkerIndicator').style.animation = "none";
             }
-
+            
+            // Code Status
             if (value.includes("CODE:SET")) {
                 codeIsSet = true;
-                document.getElementById('codeState').textContent = "Sicherheitscode gesetzt";
+                document.getElementById('codeState').textContent = "Gespeichert";
             } else if (value.includes("CODE:NONE")) {
                 codeIsSet = false;
-                document.getElementById('codeState').textContent = "Kein Sicherheitscode";
+                document.getElementById('codeState').textContent = "Nicht gespeichert";
             }
-
+            
+            // Authentifizierung
             if (value.includes("AUTH:1")) {
                 isAuthenticated = true;
                 updateUI();
@@ -146,7 +176,8 @@
                 isAuthenticated = false;
                 updateUI();
             }
-
+            
+            // Nachrichten
             const authMsg = document.getElementById('authMessage');
             if (value === "AUTH_OK") {
                 authMsg.textContent = "Erfolgreich authentifiziert!";
@@ -154,7 +185,7 @@
                 authMsg.style.display = "block";
                 setTimeout(() => authMsg.style.display = "none", 3000);
             } else if (value === "AUTH_FAIL") {
-                authMsg.textContent = "Authentifizierung fehlgeschlagen - falscher Code!";
+                authMsg.textContent = "Falscher Code!";
                 authMsg.className = "error";
                 authMsg.style.display = "block";
             }
@@ -163,38 +194,35 @@
         function updateUI() {
             const codeArea = document.getElementById('codeInputArea');
             codeArea.innerHTML = '';
-
+            
             if (!isAuthenticated) {
                 if (codeIsSet) {
                     codeArea.innerHTML = `
-                        <p>Bitte geben Sie Ihren Sicherheitscode ein:</p>
                         <input type="password" id="codeInput" placeholder="Sicherheitscode">
                         <button id="authBtn">Authentifizieren</button>
                     `;
                     document.getElementById('authBtn').addEventListener('click', authenticate);
                 } else {
                     codeArea.innerHTML = `
-                        <p>Bitte legen Sie einen Sicherheitscode fest (4-16 Zeichen):</p>
-                        <input type="password" id="newCode" placeholder="Neuer Sicherheitscode">
+                        <p>Erstellen Sie einen Sicherheitscode:</p>
+                        <input type="password" id="newCode" placeholder="4-16 Zeichen">
                         <button id="setCodeBtn">Code speichern</button>
                     `;
                     document.getElementById('setCodeBtn').addEventListener('click', setCode);
                 }
-
+                
                 document.getElementById('blinkerOnBtn').disabled = true;
                 document.getElementById('blinkerOffBtn').disabled = true;
             } else {
                 codeArea.innerHTML = `
-                    <div class="button-group">
-                        <button id="logoutBtn">Abmelden</button>
-                        ${codeIsSet ? '<button id="changeCodeBtn">Code ändern</button>' : ''}
-                    </div>
+                    <button id="logoutBtn">Abmelden</button>
+                    ${codeIsSet ? '<button id="changeCodeBtn">Code ändern</button>' : ''}
                 `;
                 document.getElementById('logoutBtn').addEventListener('click', logout);
                 if (codeIsSet) {
                     document.getElementById('changeCodeBtn').addEventListener('click', showCodeChange);
                 }
-
+                
                 document.getElementById('blinkerOnBtn').disabled = false;
                 document.getElementById('blinkerOffBtn').disabled = false;
             }
@@ -209,27 +237,19 @@
         async function authenticate() {
             const code = document.getElementById('codeInput').value;
             if (code.length >= 4) {
-                document.getElementById('authBtn').disabled = true;
-                document.getElementById('authBtn').textContent = "Prüfe...";
                 await sendCommand("CHECKCODE:" + code);
-                document.getElementById('authBtn').disabled = false;
-                document.getElementById('authBtn').textContent = "Authentifizieren";
             } else {
-                alert("Der Code muss mindestens 4 Zeichen lang sein!");
+                alert("Code muss mindestens 4 Zeichen haben!");
             }
         }
 
         async function setCode() {
             const code = document.getElementById('newCode').value;
             if (code.length >= 4 && code.length <= 16) {
-                document.getElementById('setCodeBtn').disabled = true;
-                document.getElementById('setCodeBtn').textContent = "Speichere...";
                 await sendCommand("SETCODE:" + code);
-                document.getElementById('setCodeBtn').disabled = false;
-                document.getElementById('setCodeBtn').textContent = "Code speichern";
-                alert("Sicherheitscode erfolgreich gespeichert!");
+                alert("Sicherheitscode gespeichert!");
             } else {
-                alert("Der Code muss zwischen 4 und 16 Zeichen lang sein!");
+                alert("Code muss 4-16 Zeichen haben!");
             }
         }
 
@@ -240,14 +260,12 @@
         function showCodeChange() {
             const codeArea = document.getElementById('codeInputArea');
             codeArea.innerHTML = `
-                <p>Aktuellen Sicherheitscode bestätigen:</p>
+                <p>Aktuellen Code bestätigen:</p>
                 <input type="password" id="currentCode" placeholder="Aktueller Code">
-                <p>Neuen Sicherheitscode eingeben:</p>
-                <input type="password" id="newChangeCode" placeholder="Neuer Code (4-16 Zeichen)">
-                <div class="button-group">
-                    <button id="confirmChangeBtn">Ändern</button>
-                    <button id="cancelChangeBtn">Abbrechen</button>
-                </div>
+                <p>Neuen Code eingeben:</p>
+                <input type="password" id="newChangeCode" placeholder="Neuer Code">
+                <button id="confirmChangeBtn">Ändern</button>
+                <button id="cancelChangeBtn">Abbrechen</button>
             `;
             document.getElementById('confirmChangeBtn').addEventListener('click', changeCode);
             document.getElementById('cancelChangeBtn').addEventListener('click', updateUI);
@@ -256,55 +274,41 @@
         async function changeCode() {
             const current = document.getElementById('currentCode').value;
             const newCode = document.getElementById('newChangeCode').value;
-
+            
             if (current && newCode.length >= 4 && newCode.length <= 16) {
-                document.getElementById('confirmChangeBtn').disabled = true;
-                document.getElementById('confirmChangeBtn').textContent = "Prüfe...";
                 await sendCommand("CHECKCODE:" + current);
                 await new Promise(resolve => setTimeout(resolve, 500));
-
+                
                 if (isAuthenticated) {
-                    document.getElementById('confirmChangeBtn').textContent = "Speichere...";
                     await sendCommand("SETCODE:" + newCode);
-                    alert("Sicherheitscode erfolgreich geändert!");
+                    alert("Code erfolgreich geändert!");
                     updateUI();
                 }
-                document.getElementById('confirmChangeBtn').disabled = false;
-                document.getElementById('confirmChangeBtn').textContent = "Ändern";
             } else {
-                alert("Ungültige Eingabe! Bitte geben Sie den aktuellen Code ein und einen neuen Code mit 4-16 Zeichen.");
+                alert("Ungültige Eingabe!");
             }
         }
 
-        // Event-Listener
+        // Event Listener
         document.getElementById('connectBtn').addEventListener('click', connect);
-        document.getElementById('blinkerOnBtn').addEventListener('click', async () => {
-            document.getElementById('blinkerOnBtn').disabled = true;
-            document.getElementById('blinkerOnBtn').textContent = "Aktiviere...";
-            await sendCommand("BLINKSAVE_EIN");
-            document.getElementById('blinkerOnBtn').disabled = false;
-        });
-        document.getElementById('blinkerOffBtn').addEventListener('click', async () => {
-            document.getElementById('blinkerOffBtn').disabled = true;
-            document.getElementById('blinkerOffBtn').textContent = "Deaktiviere...";
-            await sendCommand("BLINKSAVE_AUS");
-            document.getElementById('blinkerOffBtn').disabled = false;
-        });
+        document.getElementById('blinkerOnBtn').addEventListener('click', () => sendCommand("BLINKSAVE_EIN"));
+        document.getElementById('blinkerOffBtn').addEventListener('click', () => sendCommand("BLINKSAVE_AUS"));
 
-        // Animation-Styles
+        // Blinkanimation
         const style = document.createElement('style');
         style.textContent = `
             @keyframes blink {
                 0% { opacity: 1; }
-                50% { opacity: 0.3; box-shadow: 0 0 20px #FFD700; }
+                50% { opacity: 0.3; }
                 100% { opacity: 1; }
             }
         `;
         document.head.appendChild(style);
 
-        // Web Bluetooth Verfügbarkeit prüfen
+        // Initialisierung
         if (!navigator.bluetooth) {
-            updateStatus("Web Bluetooth wird von diesem Browser nicht unterstützt");
+            document.getElementById('connectionStatus').textContent = 
+                "Web Bluetooth wird von diesem Browser nicht unterstützt";
             document.getElementById('connectBtn').disabled = true;
         }
     </script>
