@@ -2,110 +2,243 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlinkSave Pro</title>
     <style>
+        :root {
+            --vespa-blue: #005BAA;
+            --vespa-lightblue: #4D9DE0;
+            --vespa-accent: #FFD700;
+            --text-light: #FFFFFF;
+            --text-dark: #333333;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            max-width: 650px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #F0F8FF;
+            color: var(--text-dark);
+            -webkit-text-size-adjust: 100%;
         }
+        
         .header {
-            background-color: #d82e21; /* Vespa Rot */
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, var(--vespa-blue), var(--vespa-lightblue));
+            color: var(--text-light);
+            padding: 25px;
+            border-radius: 12px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 91, 170, 0.2);
         }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
         .section {
             background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 91, 170, 0.1);
         }
+        
+        .section h2 {
+            color: var(--vespa-blue);
+            margin-top: 0;
+            border-bottom: 2px solid var(--vespa-lightblue);
+            padding-bottom: 10px;
+            font-size: 22px;
+        }
+        
         button {
-            background-color: #d82e21;
+            background: linear-gradient(to bottom, var(--vespa-blue), #004B94);
             color: white;
             border: none;
-            padding: 12px 20px;
-            margin: 5px;
-            border-radius: 4px;
+            padding: 14px 24px;
+            margin: 8px 0;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            min-width: 200px;
+            font-weight: 500;
+            min-width: 220px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 91, 170, 0.3);
+            -webkit-appearance: none;
         }
+        
         button:hover {
-            background-color: #b8241a;
+            background: linear-gradient(to bottom, #0068CC, var(--vespa-blue));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 91, 170, 0.4);
         }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
         button:disabled {
-            background-color: #cccccc;
+            background: #CCCCCC;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
+        
         #blinkerIndicator {
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: inline-block;
-            background: grey;
-            margin-left: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            background: #DDDDDD;
+            margin-left: 12px;
+            vertical-align: middle;
+            border: 2px solid white;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
+        
         .status {
-            margin: 15px 0;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 4px;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: rgba(0, 91, 170, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid var(--vespa-lightblue);
         }
+        
+        .status strong {
+            color: var(--vespa-blue);
+        }
+        
         input {
-            padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #DDDDDD;
+            border-radius: 8px;
             width: 100%;
-            max-width: 200px;
+            max-width: 250px;
+            font-size: 16px;
+            transition: border 0.3s;
+            -webkit-appearance: none;
         }
+        
+        input:focus {
+            border-color: var(--vespa-lightblue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(77, 157, 224, 0.2);
+        }
+        
         .error {
-            color: #d82e21;
-            margin: 10px 0;
+            color: #E74C3C;
+            margin: 12px 0;
+            padding: 10px;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 6px;
+            border-left: 4px solid #E74C3C;
         }
+        
         .success {
-            color: #28a745;
-            margin: 10px 0;
+            color: #27AE60;
+            margin: 12px 0;
+            padding: 10px;
+            background-color: rgba(39, 174, 96, 0.1);
+            border-radius: 6px;
+            border-left: 4px solid #27AE60;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .logo span {
+            color: var(--vespa-accent);
+        }
+        
+        .compatibility-warning {
+            display: none;
+            background: #FFF3CD;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #FFC107;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            button {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="bluefyWarning" class="compatibility-warning">
+        <strong>Bluefy-Hinweis für iPhone:</strong>
+        <ol>
+            <li>Bluefy muss im Vordergrund geöffnet sein</li>
+            <li>Bluetooth in den iPhone-Einstellungen aktivieren</li>
+            <li>Bei Verbindungsproblemen Bluefy neustarten</li>
+            <li>Stellen Sie sicher, dass BlinkSave Pro eingeschaltet ist</li>
+        </ol>
+    </div>
+
     <div class="header">
-        <h1>BlinkSave Pro</h1>
+        <div class="logo">BLINK<span>SAVE</span> PRO</div>
+        <h1>Intelligente Blinkersteuerung</h1>
     </div>
     
     <div class="section">
-        <h2>Verbindung</h2>
+        <h2>Bluetooth-Verbindung</h2>
         <button id="connectBtn">Mit BlinkSave Pro verbinden</button>
         <div class="status">
-            <strong>Status:</strong> <span id="connectionStatus">Nicht verbunden</span>
+            <strong>Verbindungsstatus:</strong> <span id="connectionStatus">Getrennt</span>
         </div>
     </div>
     
     <div id="authSection" class="section" style="display:none;">
-        <h2>Sicherheit</h2>
+        <h2>Sicherheitsmanagement</h2>
         <div class="status">
-            <strong>Code Status:</strong> <span id="codeState">-</span>
+            <strong>Sicherheitsstatus:</strong> <span id="codeState">Nicht initialisiert</span>
         </div>
         <div id="codeInputArea"></div>
         <div id="authMessage" style="display:none;"></div>
     </div>
     
     <div id="blinkerSection" class="section" style="display:none;">
-        <h2>BlinkSave <span id="blinkerIndicator"></span></h2>
+        <h2>Systemsteuerung <span id="blinkerIndicator"></span></h2>
         <div class="status">
-            <strong>Aktueller Status:</strong> <span id="blinkerStatus">-</span>
+            <strong>Aktueller Modus:</strong> <span id="blinkerStatus">---</span>
         </div>
-        <button id="blinkerOnBtn" disabled>BlinkSave EIN</button>
-        <button id="blinkerOffBtn" disabled>BlinkSave AUS</button>
+        <div class="button-group">
+            <button id="blinkerOnBtn" disabled>Aktivieren</button>
+            <button id="blinkerOffBtn" disabled>Deaktivieren</button>
+        </div>
     </div>
 
     <script>
@@ -115,12 +248,34 @@
         let codeIsSet = false;
         let isAuthenticated = false;
 
+        // Bluefy/iPhone Erkennung
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const isBluefy = window.webkit && window.webkit.messageHandlers;
+
+        // Bluefy-spezifische Einstellungen
+        const bleOptions = {
+            optionalServices: [0xFFE0],
+            acceptAllDevices: isIOS || isBluefy // Für iOS/Bluefy alle Geräte anzeigen
+        };
+
         async function connect() {
             try {
-                device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: "BlinkSave Pro" }],
-                    optionalServices: [0xFFE0]
-                });
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('connectBtn').textContent = "Verbinde...";
+                
+                // Bluefy-spezifische Vorbereitung
+                if (isBluefy) {
+                    document.getElementById('bluefyWarning').style.display = 'block';
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                device = await navigator.bluetooth.requestDevice(bleOptions)
+                    .catch(err => {
+                        if (err.code === 8) { // NotFoundError
+                            throw new Error("Gerät nicht gefunden. Bitte einschalten!");
+                        }
+                        throw err;
+                    });
                 
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(0xFFE0);
@@ -131,7 +286,7 @@
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
                 await txCharacteristic.startNotifications();
                 
-                document.getElementById('connectionStatus').textContent = "Verbunden";
+                document.getElementById('connectionStatus').textContent = "Verbunden mit " + (device.name || "BlinkSave Pro");
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('blinkerSection').style.display = 'block';
@@ -139,36 +294,49 @@
                 await sendCommand("GETSTATUS");
                 
             } catch(error) {
-                console.error('Fehler:', error);
-                document.getElementById('connectionStatus').textContent = "Fehler: " + error.message;
+                console.error('Verbindungsfehler:', error);
+                let errorMsg = "Fehler: ";
+                
+                if (error.message.includes("User cancelled")) {
+                    errorMsg = "Abgebrochen - bitte in Bluefy erneut versuchen";
+                } else if (error.message.includes("Gerät nicht gefunden")) {
+                    errorMsg = "BlinkSave Pro nicht gefunden - bitte einschalten";
+                } else if (error.message.includes("Bluetooth")) {
+                    errorMsg = "Bluetooth nicht aktiviert - bitte in Einstellungen prüfen";
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                document.getElementById('connectionStatus').textContent = errorMsg;
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('connectBtn').textContent = "Erneut versuchen";
             }
         }
 
         function handleNotifications(event) {
             const value = new TextDecoder().decode(event.target.value);
-            console.log("Empfangen:", value);
+            console.log("Empfangene Daten:", value);
             
-            // Blinker Status
             if (value.includes("BLINKER:1")) {
                 document.getElementById('blinkerStatus').textContent = "AKTIV";
-                document.getElementById('blinkerIndicator').style.backgroundColor = '#d82e21';
-                document.getElementById('blinkerIndicator').style.animation = "blink 1s infinite";
+                document.getElementById('blinkerIndicator').style.backgroundColor = '#FFD700';
+                document.getElementById('blinkerIndicator').style.animation = 'blink 1s infinite';
+                document.getElementById('blinkerOnBtn').textContent = "Aktiv (läuft)";
             } else if (value.includes("BLINKER:0")) {
                 document.getElementById('blinkerStatus').textContent = "INAKTIV";
-                document.getElementById('blinkerIndicator').style.backgroundColor = 'grey';
-                document.getElementById('blinkerIndicator').style.animation = "none";
+                document.getElementById('blinkerIndicator').style.backgroundColor = '#DDDDDD';
+                document.getElementById('blinkerIndicator').style.animation = 'none';
+                document.getElementById('blinkerOnBtn').textContent = "Aktivieren";
             }
             
-            // Code Status
             if (value.includes("CODE:SET")) {
                 codeIsSet = true;
-                document.getElementById('codeState').textContent = "Gespeichert";
+                document.getElementById('codeState').textContent = "Sicherheitscode gesetzt";
             } else if (value.includes("CODE:NONE")) {
                 codeIsSet = false;
-                document.getElementById('codeState').textContent = "Nicht gespeichert";
+                document.getElementById('codeState').textContent = "Kein Sicherheitscode";
             }
             
-            // Authentifizierung
             if (value.includes("AUTH:1")) {
                 isAuthenticated = true;
                 updateUI();
@@ -177,7 +345,6 @@
                 updateUI();
             }
             
-            // Nachrichten
             const authMsg = document.getElementById('authMessage');
             if (value === "AUTH_OK") {
                 authMsg.textContent = "Erfolgreich authentifiziert!";
@@ -185,7 +352,7 @@
                 authMsg.style.display = "block";
                 setTimeout(() => authMsg.style.display = "none", 3000);
             } else if (value === "AUTH_FAIL") {
-                authMsg.textContent = "Falscher Code!";
+                authMsg.textContent = "Authentifizierung fehlgeschlagen - falscher Code!";
                 authMsg.className = "error";
                 authMsg.style.display = "block";
             }
@@ -198,14 +365,15 @@
             if (!isAuthenticated) {
                 if (codeIsSet) {
                     codeArea.innerHTML = `
-                        <input type="password" id="codeInput" placeholder="Sicherheitscode">
+                        <p>Bitte geben Sie Ihren Sicherheitscode ein:</p>
+                        <input type="password" id="codeInput" placeholder="Sicherheitscode" autocomplete="off">
                         <button id="authBtn">Authentifizieren</button>
                     `;
                     document.getElementById('authBtn').addEventListener('click', authenticate);
                 } else {
                     codeArea.innerHTML = `
-                        <p>Erstellen Sie einen Sicherheitscode:</p>
-                        <input type="password" id="newCode" placeholder="4-16 Zeichen">
+                        <p>Bitte legen Sie einen Sicherheitscode fest (4-16 Zeichen):</p>
+                        <input type="password" id="newCode" placeholder="Neuer Sicherheitscode" autocomplete="off">
                         <button id="setCodeBtn">Code speichern</button>
                     `;
                     document.getElementById('setCodeBtn').addEventListener('click', setCode);
@@ -215,8 +383,10 @@
                 document.getElementById('blinkerOffBtn').disabled = true;
             } else {
                 codeArea.innerHTML = `
-                    <button id="logoutBtn">Abmelden</button>
-                    ${codeIsSet ? '<button id="changeCodeBtn">Code ändern</button>' : ''}
+                    <div class="button-group">
+                        <button id="logoutBtn">Abmelden</button>
+                        ${codeIsSet ? '<button id="changeCodeBtn">Code ändern</button>' : ''}
+                    </div>
                 `;
                 document.getElementById('logoutBtn').addEventListener('click', logout);
                 if (codeIsSet) {
@@ -229,27 +399,47 @@
         }
 
         async function sendCommand(cmd) {
-            if (!rxCharacteristic) return;
-            const encoder = new TextEncoder();
-            await rxCharacteristic.writeValue(encoder.encode(cmd));
+            if (!rxCharacteristic) {
+                console.error("Keine RX-Characteristic verfügbar");
+                return;
+            }
+            
+            try {
+                const encoder = new TextEncoder();
+                await rxCharacteristic.writeValue(encoder.encode(cmd));
+                console.log("Befehl gesendet:", cmd);
+            } catch (error) {
+                console.error("Fehler beim Senden des Befehls:", error);
+                if (error.message.includes("not connected")) {
+                    document.getElementById('connectionStatus').textContent = "Verbindung verloren - bitte neu verbinden";
+                    location.reload();
+                }
+            }
         }
 
         async function authenticate() {
             const code = document.getElementById('codeInput').value;
             if (code.length >= 4) {
+                document.getElementById('authBtn').disabled = true;
+                document.getElementById('authBtn').textContent = "Prüfe...";
                 await sendCommand("CHECKCODE:" + code);
+                document.getElementById('authBtn').disabled = false;
+                document.getElementById('authBtn').textContent = "Authentifizieren";
             } else {
-                alert("Code muss mindestens 4 Zeichen haben!");
+                alert("Der Code muss mindestens 4 Zeichen lang sein!");
             }
         }
 
         async function setCode() {
             const code = document.getElementById('newCode').value;
             if (code.length >= 4 && code.length <= 16) {
+                document.getElementById('setCodeBtn').disabled = true;
+                document.getElementById('setCodeBtn').textContent = "Speichere...";
                 await sendCommand("SETCODE:" + code);
-                alert("Sicherheitscode gespeichert!");
+                document.getElementById('setCodeBtn').disabled = false;
+                document.getElementById('setCodeBtn').textContent = "Code speichern";
             } else {
-                alert("Code muss 4-16 Zeichen haben!");
+                alert("Der Code muss zwischen 4 und 16 Zeichen lang sein!");
             }
         }
 
@@ -260,12 +450,14 @@
         function showCodeChange() {
             const codeArea = document.getElementById('codeInputArea');
             codeArea.innerHTML = `
-                <p>Aktuellen Code bestätigen:</p>
-                <input type="password" id="currentCode" placeholder="Aktueller Code">
-                <p>Neuen Code eingeben:</p>
-                <input type="password" id="newChangeCode" placeholder="Neuer Code">
-                <button id="confirmChangeBtn">Ändern</button>
-                <button id="cancelChangeBtn">Abbrechen</button>
+                <p>Aktuellen Sicherheitscode bestätigen:</p>
+                <input type="password" id="currentCode" placeholder="Aktueller Code" autocomplete="off">
+                <p>Neuen Sicherheitscode eingeben:</p>
+                <input type="password" id="newChangeCode" placeholder="Neuer Code (4-16 Zeichen)" autocomplete="off">
+                <div class="button-group">
+                    <button id="confirmChangeBtn">Ändern</button>
+                    <button id="cancelChangeBtn">Abbrechen</button>
+                </div>
             `;
             document.getElementById('confirmChangeBtn').addEventListener('click', changeCode);
             document.getElementById('cancelChangeBtn').addEventListener('click', updateUI);
@@ -276,30 +468,45 @@
             const newCode = document.getElementById('newChangeCode').value;
             
             if (current && newCode.length >= 4 && newCode.length <= 16) {
+                document.getElementById('confirmChangeBtn').disabled = true;
+                document.getElementById('confirmChangeBtn').textContent = "Prüfe...";
                 await sendCommand("CHECKCODE:" + current);
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
                 if (isAuthenticated) {
+                    document.getElementById('confirmChangeBtn').textContent = "Speichere...";
                     await sendCommand("SETCODE:" + newCode);
-                    alert("Code erfolgreich geändert!");
+                    alert("Sicherheitscode erfolgreich geändert!");
                     updateUI();
                 }
+                document.getElementById('confirmChangeBtn').disabled = false;
+                document.getElementById('confirmChangeBtn').textContent = "Ändern";
             } else {
-                alert("Ungültige Eingabe!");
+                alert("Ungültige Eingabe! Bitte geben Sie den aktuellen Code ein und einen neuen Code mit 4-16 Zeichen.");
             }
         }
 
         // Event Listener
         document.getElementById('connectBtn').addEventListener('click', connect);
-        document.getElementById('blinkerOnBtn').addEventListener('click', () => sendCommand("BLINKSAVE_EIN"));
-        document.getElementById('blinkerOffBtn').addEventListener('click', () => sendCommand("BLINKSAVE_AUS"));
+        document.getElementById('blinkerOnBtn').addEventListener('click', async () => {
+            document.getElementById('blinkerOnBtn').disabled = true;
+            document.getElementById('blinkerOnBtn').textContent = "Aktiviere...";
+            await sendCommand("BLINKSAVE_EIN");
+            document.getElementById('blinkerOnBtn').disabled = false;
+        });
+        document.getElementById('blinkerOffBtn').addEventListener('click', async () => {
+            document.getElementById('blinkerOffBtn').disabled = true;
+            document.getElementById('blinkerOffBtn').textContent = "Deaktiviere...";
+            await sendCommand("BLINKSAVE_AUS");
+            document.getElementById('blinkerOffBtn').disabled = false;
+        });
 
         // Blinkanimation
         const style = document.createElement('style');
         style.textContent = `
             @keyframes blink {
                 0% { opacity: 1; }
-                50% { opacity: 0.3; }
+                50% { opacity: 0.3; box-shadow: 0 0 20px #FFD700; }
                 100% { opacity: 1; }
             }
         `;
@@ -310,6 +517,15 @@
             document.getElementById('connectionStatus').textContent = 
                 "Web Bluetooth wird von diesem Browser nicht unterstützt";
             document.getElementById('connectBtn').disabled = true;
+        } else if (isIOS && !isBluefy) {
+            document.getElementById('bluefyWarning').style.display = 'block';
+            document.getElementById('bluefyWarning').innerHTML += 
+                '<p><strong>Hinweis:</strong> Für iOS wird der Bluefy Browser benötigt!</p>';
+        }
+
+        // Bluefy-spezifische Initialisierung
+        if (isBluefy) {
+            document.getElementById('bluefyWarning').style.display = 'block';
         }
     </script>
 </body>
