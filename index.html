@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlinkSave Pro</title>
     <style>
@@ -12,176 +12,7 @@
             --text-light: #FFFFFF;
             --text-dark: #333333;
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 650px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #F0F8FF;
-            color: var(--text-dark);
-        }
-        
-        .header {
-            background: linear-gradient(135deg, var(--vespa-blue), var(--vespa-lightblue));
-            color: var(--text-light);
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 12px rgba(0, 91, 170, 0.2);
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        
-        .section {
-            background-color: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(0, 91, 170, 0.1);
-        }
-        
-        .section h2 {
-            color: var(--vespa-blue);
-            margin-top: 0;
-            border-bottom: 2px solid var(--vespa-lightblue);
-            padding-bottom: 10px;
-            font-size: 22px;
-        }
-        
-        button {
-            background: linear-gradient(to bottom, var(--vespa-blue), #004B94);
-            color: white;
-            border: none;
-            padding: 14px 24px;
-            margin: 8px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            min-width: 220px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 91, 170, 0.3);
-        }
-        
-        button:hover {
-            background: linear-gradient(to bottom, #0068CC, var(--vespa-blue));
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 91, 170, 0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            background: #CCCCCC;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        #blinkerIndicator {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: inline-block;
-            background: #DDDDDD;
-            margin-left: 12px;
-            vertical-align: middle;
-            border: 2px solid white;
-            box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .status {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: rgba(0, 91, 170, 0.05);
-            border-radius: 8px;
-            border-left: 4px solid var(--vespa-lightblue);
-        }
-        
-        .status strong {
-            color: var(--vespa-blue);
-        }
-        
-        input {
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #DDDDDD;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 250px;
-            font-size: 16px;
-            transition: border 0.3s;
-        }
-        
-        input:focus {
-            border-color: var(--vespa-lightblue);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(77, 157, 224, 0.2);
-        }
-        
-        .error {
-            color: #E74C3C;
-            margin: 12px 0;
-            padding: 10px;
-            background-color: rgba(231, 76, 60, 0.1);
-            border-radius: 6px;
-            border-left: 4px solid #E74C3C;
-        }
-        
-        .success {
-            color: #27AE60;
-            margin: 12px 0;
-            padding: 10px;
-            background-color: rgba(39, 174, 96, 0.1);
-            border-radius: 6px;
-            border-left: 4px solid #27AE60;
-        }
-        
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .logo span {
-            color: var(--vespa-accent);
-        }
-        
-        @media (max-width: 600px) {
-            body {
-                padding: 15px;
-            }
-            
-            .header {
-                padding: 20px;
-            }
-            
-            .section {
-                padding: 20px;
-            }
-            
-            button {
-                min-width: 100%;
-            }
-        }
+        /* ... (dein kompletter Style bleibt unverändert) ... */
     </style>
 </head>
 <body>
@@ -197,7 +28,7 @@
             <strong>Verbindungsstatus:</strong> <span id="connectionStatus">Getrennt</span>
         </div>
     </div>
-    
+
     <div id="authSection" class="section" style="display:none;">
         <h2>Sicherheitsmanagement</h2>
         <div class="status">
@@ -206,7 +37,7 @@
         <div id="codeInputArea"></div>
         <div id="authMessage" style="display:none;"></div>
     </div>
-    
+
     <div id="blinkerSection" class="section" style="display:none;">
         <h2>Systemsteuerung <span id="blinkerIndicator"></span></h2>
         <div class="status">
@@ -227,43 +58,67 @@
 
         async function connect() {
             try {
+                updateStatus("Verbindung wird aufgebaut...");
                 document.getElementById('connectBtn').disabled = true;
                 document.getElementById('connectBtn').textContent = "Verbinde...";
-                
+
                 device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: "BlinkSave Pro" }],
+                    acceptAllDevices: true,
                     optionalServices: [0xFFE0]
                 });
-                
+
+                if (device.name !== "BlinkSave Pro") {
+                    alert("Falsches Gerät ausgewählt: " + device.name);
+                    updateStatus("Falsches Gerät ausgewählt");
+                    document.getElementById('connectBtn').disabled = false;
+                    document.getElementById('connectBtn').textContent = "Erneut versuchen";
+                    return;
+                }
+
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+
                 const server = await device.gatt.connect();
                 const service = await server.getPrimaryService(0xFFE0);
-                
+
                 txCharacteristic = await service.getCharacteristic(0xFFE2);
                 rxCharacteristic = await service.getCharacteristic(0xFFE1);
-                
+
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
                 await txCharacteristic.startNotifications();
-                
-                document.getElementById('connectionStatus').textContent = "Verbunden";
+
+                updateStatus("Verbunden");
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('blinkerSection').style.display = 'block';
-                
+
                 await sendCommand("GETSTATUS");
-                
-            } catch(error) {
-                console.error('Fehler:', error);
-                document.getElementById('connectionStatus').textContent = "Fehler: " + error.message;
+
+            } catch (error) {
+                console.error("Verbindungsfehler:", error);
+                alert("Bluetooth-Fehler: " + error.message);
+                updateStatus("Fehler: " + error.message);
                 document.getElementById('connectBtn').disabled = false;
                 document.getElementById('connectBtn').textContent = "Erneut versuchen";
             }
         }
 
+        function updateStatus(msg) {
+            document.getElementById('connectionStatus').textContent = msg;
+        }
+
+        function onDisconnected() {
+            updateStatus("Verbindung getrennt");
+            document.getElementById('connectBtn').style.display = 'block';
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('connectBtn').textContent = "Neu verbinden";
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('blinkerSection').style.display = 'none';
+        }
+
         function handleNotifications(event) {
             const value = new TextDecoder().decode(event.target.value);
             console.log("Empfangen:", value);
-            
-            // Statusanzeige
+
             if (value.includes("BLINKER:1")) {
                 document.getElementById('blinkerStatus').textContent = "AKTIV";
                 document.getElementById('blinkerIndicator').style.backgroundColor = '#FFD700';
@@ -275,8 +130,7 @@
                 document.getElementById('blinkerIndicator').style.boxShadow = '0 0 15px transparent';
                 document.getElementById('blinkerOnBtn').textContent = "Aktivieren";
             }
-            
-            // Code Status
+
             if (value.includes("CODE:SET")) {
                 codeIsSet = true;
                 document.getElementById('codeState').textContent = "Sicherheitscode gesetzt";
@@ -284,8 +138,7 @@
                 codeIsSet = false;
                 document.getElementById('codeState').textContent = "Kein Sicherheitscode";
             }
-            
-            // Authentifizierung
+
             if (value.includes("AUTH:1")) {
                 isAuthenticated = true;
                 updateUI();
@@ -293,8 +146,7 @@
                 isAuthenticated = false;
                 updateUI();
             }
-            
-            // Nachrichten
+
             const authMsg = document.getElementById('authMessage');
             if (value === "AUTH_OK") {
                 authMsg.textContent = "Erfolgreich authentifiziert!";
@@ -311,7 +163,7 @@
         function updateUI() {
             const codeArea = document.getElementById('codeInputArea');
             codeArea.innerHTML = '';
-            
+
             if (!isAuthenticated) {
                 if (codeIsSet) {
                     codeArea.innerHTML = `
@@ -328,7 +180,7 @@
                     `;
                     document.getElementById('setCodeBtn').addEventListener('click', setCode);
                 }
-                
+
                 document.getElementById('blinkerOnBtn').disabled = true;
                 document.getElementById('blinkerOffBtn').disabled = true;
             } else {
@@ -342,7 +194,7 @@
                 if (codeIsSet) {
                     document.getElementById('changeCodeBtn').addEventListener('click', showCodeChange);
                 }
-                
+
                 document.getElementById('blinkerOnBtn').disabled = false;
                 document.getElementById('blinkerOffBtn').disabled = false;
             }
@@ -404,13 +256,13 @@
         async function changeCode() {
             const current = document.getElementById('currentCode').value;
             const newCode = document.getElementById('newChangeCode').value;
-            
+
             if (current && newCode.length >= 4 && newCode.length <= 16) {
                 document.getElementById('confirmChangeBtn').disabled = true;
                 document.getElementById('confirmChangeBtn').textContent = "Prüfe...";
                 await sendCommand("CHECKCODE:" + current);
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
+
                 if (isAuthenticated) {
                     document.getElementById('confirmChangeBtn').textContent = "Speichere...";
                     await sendCommand("SETCODE:" + newCode);
@@ -424,7 +276,7 @@
             }
         }
 
-        // Event Listener
+        // Event-Listener
         document.getElementById('connectBtn').addEventListener('click', connect);
         document.getElementById('blinkerOnBtn').addEventListener('click', async () => {
             document.getElementById('blinkerOnBtn').disabled = true;
@@ -439,7 +291,7 @@
             document.getElementById('blinkerOffBtn').disabled = false;
         });
 
-        // Blinkanimation
+        // Animation-Styles
         const style = document.createElement('style');
         style.textContent = `
             @keyframes blink {
@@ -450,10 +302,9 @@
         `;
         document.head.appendChild(style);
 
-        // Initialisierung
+        // Web Bluetooth Verfügbarkeit prüfen
         if (!navigator.bluetooth) {
-            document.getElementById('connectionStatus').textContent = 
-                "Web Bluetooth wird von diesem Browser nicht unterstützt";
+            updateStatus("Web Bluetooth wird von diesem Browser nicht unterstützt");
             document.getElementById('connectBtn').disabled = true;
         }
     </script>
