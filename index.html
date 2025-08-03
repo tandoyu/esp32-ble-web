@@ -291,7 +291,7 @@
                 document.getElementById('connectBtn').textContent = "Verbinde...";
                 
                 device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: "BlinkSave Pro" }],
+                    acceptAllDevices: true,
                     optionalServices: [0xFFE0]
                 });
                 
