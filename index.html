@@ -137,6 +137,7 @@
             background-color: rgba(231, 76, 60, 0.1);
             border-radius: 6px;
             border-left: 4px solid #E74C3C;
+            display: none;
         }
         
         .success {
@@ -146,6 +147,7 @@
             background-color: rgba(39, 174, 96, 0.1);
             border-radius: 6px;
             border-left: 4px solid #27AE60;
+            display: none;
         }
         
         .button-group {
@@ -164,7 +166,30 @@
         .logo span {
             color: var(--vespa-accent);
         }
-        
+
+        .time-input {
+            margin-bottom: 20px;
+        }
+
+        .time-input h3 {
+            margin-bottom: 8px;
+        }
+
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-input-group input {
+            width: 80px;
+            margin: 0;
+        }
+
+        .time-input-group span {
+            color: #666;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 15px;
@@ -180,6 +205,12 @@
             
             button {
                 min-width: 100%;
+            }
+
+            .time-input-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
             }
         }
     </style>
@@ -205,7 +236,7 @@
             <strong>Sicherheitsstatus:</strong> <span id="codeState">Nicht initialisiert</span>
         </div>
         <div id="codeInputArea"></div>
-        <div id="authMessage" style="display:none;"></div>
+        <div id="authMessage" class="error"></div>
     </div>
     
     <div id="blinkerSection" class="section" style="display:none;">
@@ -216,6 +247,34 @@
         <div class="button-group">
             <button id="blinkerOnBtn" disabled>Aktivieren</button>
             <button id="blinkerOffBtn" disabled>Deaktivieren</button>
+        </div>
+    </div>
+
+    <div id="settingsSection" class="section" style="display:none;">
+        <h2>Beep-Zeiten Einstellungen</h2>
+        <div class="status">
+            <strong>Aktuelle Zeiten:</strong> 
+            <span id="currentBeepTimes">Lade...</span>
+        </div>
+        <div>
+            <div class="time-input">
+                <h3>Doppelbeep nach:</h3>
+                <div class="time-input-group">
+                    <input type="number" id="doubleBeepInput" min="1" max=180" placeholder="5">
+                    <span>Sekunden (1-180)</span>
+                </div>
+            </div>
+            
+            <div class="time-input">
+                <h3>Dauerbeep nach:</h3>
+                <div class="time-input-group">
+                    <input type="number" id="longBeepInput" min="1" max="300" placeholder="10">
+                    <span>Sekunden (1-300)</span>
+                </div>
+            </div>
+            <button id="saveBeepTimesBtn">Zeiten speichern</button>
+            <div id="beepTimeError" class="error"></div>
+            <div id="beepTimeSuccess" class="success"></div>
         </div>
     </div>
 
@@ -232,7 +291,7 @@
                 document.getElementById('connectBtn').textContent = "Verbinde...";
                 
                 device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: "BlinkSave Pro" }],
+                    acceptAllDevices: true,
                     optionalServices: [0xFFE0]
                 });
                 
@@ -250,6 +309,7 @@
                 document.getElementById('disconnectBtn').style.display = 'inline-block';
                 document.getElementById('authSection').style.display = 'block';
                 document.getElementById('blinkerSection').style.display = 'block';
+                document.getElementById('settingsSection').style.display = 'block';
                 
                 await sendCommand("GETSTATUS");
                 
@@ -269,23 +329,21 @@
                     }
                     await device.gatt.disconnect();
                     
-                    // Zurücksetzen der Variablen
                     device = null;
                     txCharacteristic = null;
                     rxCharacteristic = null;
                     codeIsSet = false;
                     isAuthenticated = false;
                     
-                    // UI zurücksetzen
                     document.getElementById('connectionStatus').textContent = "Getrennt";
                     document.getElementById('connectBtn').style.display = 'inline-block';
                     document.getElementById('disconnectBtn').style.display = 'none';
                     document.getElementById('authSection').style.display = 'none';
                     document.getElementById('blinkerSection').style.display = 'none';
+                    document.getElementById('settingsSection').style.display = 'none';
                     document.getElementById('connectBtn').disabled = false;
                     document.getElementById('connectBtn').textContent = "Mit BlinkSave Pro verbinden";
                     
-                    // Blinker-Status zurücksetzen
                     document.getElementById('blinkerStatus').textContent = "---";
                     document.getElementById('blinkerIndicator').style.backgroundColor = '#DDDDDD';
                     document.getElementById('blinkerIndicator').style.boxShadow = '0 0 15px transparent';
@@ -331,6 +389,19 @@
                 updateUI();
             }
             
+            // Beep-Zeiten
+            if (value.includes("DELAYS:")) {
+                const times = value.split("DELAYS:")[1].split(",");
+                const doubleBeep = times[0];
+                const longBeep = times[1];
+                
+                document.getElementById('doubleBeepInput').value = doubleBeep;
+                document.getElementById('longBeepInput').value = longBeep;
+                
+                document.getElementById('currentBeepTimes').textContent = 
+                    `Doppelbeep: ${doubleBeep}s, Dauerbeep: ${longBeep}s`;
+            }
+            
             // Nachrichten
             const authMsg = document.getElementById('authMessage');
             if (value === "AUTH_OK") {
@@ -342,6 +413,18 @@
                 authMsg.textContent = "Authentifizierung fehlgeschlagen - falscher Code!";
                 authMsg.className = "error";
                 authMsg.style.display = "block";
+            } else if (value === "DELAYS_UPDATED") {
+                const successMsg = document.getElementById('beepTimeSuccess');
+                successMsg.textContent = "Beep-Zeiten erfolgreich aktualisiert!";
+                successMsg.className = "success";
+                successMsg.style.display = "block";
+                setTimeout(() => successMsg.style.display = "none", 3000);
+            } else if (value === "ERROR:INVALID_TIME") {
+                const errorMsg = document.getElementById('beepTimeError');
+                errorMsg.textContent = "Ungültige Zeitwerte (1-180s für Doppelbeep, 1-300s für Dauerbeep)!";
+                errorMsg.className = "error";
+                errorMsg.style.display = "block";
+                setTimeout(() => errorMsg.style.display = "none", 3000);
             }
         }
 
@@ -400,7 +483,10 @@
                 document.getElementById('authBtn').disabled = false;
                 document.getElementById('authBtn').textContent = "Authentifizieren";
             } else {
-                alert("Der Code muss mindestens 4 Zeichen lang sein!");
+                const authMsg = document.getElementById('authMessage');
+                authMsg.textContent = "Der Code muss mindestens 4 Zeichen lang sein!";
+                authMsg.className = "error";
+                authMsg.style.display = "block";
             }
         }
 
@@ -412,9 +498,11 @@
                 await sendCommand("SETCODE:" + code);
                 document.getElementById('setCodeBtn').disabled = false;
                 document.getElementById('setCodeBtn').textContent = "Code speichern";
-                alert("Sicherheitscode erfolgreich gespeichert!");
             } else {
-                alert("Der Code muss zwischen 4 und 16 Zeichen lang sein!");
+                const authMsg = document.getElementById('authMessage');
+                authMsg.textContent = "Der Code muss zwischen 4 und 16 Zeichen lang sein!";
+                authMsg.className = "error";
+                authMsg.style.display = "block";
             }
         }
 
@@ -441,6 +529,7 @@
         async function changeCode() {
             const current = document.getElementById('currentCode').value;
             const newCode = document.getElementById('newChangeCode').value;
+            const authMsg = document.getElementById('authMessage');
             
             if (current && newCode.length >= 4 && newCode.length <= 16) {
                 document.getElementById('confirmChangeBtn').disabled = true;
@@ -451,17 +540,54 @@
                 if (isAuthenticated) {
                     document.getElementById('confirmChangeBtn').textContent = "Speichere...";
                     await sendCommand("SETCODE:" + newCode);
-                    alert("Sicherheitscode erfolgreich geändert!");
+                    authMsg.textContent = "Sicherheitscode erfolgreich geändert!";
+                    authMsg.className = "success";
+                    authMsg.style.display = "block";
                     updateUI();
+                } else {
+                    authMsg.textContent = "Aktueller Code ist falsch!";
+                    authMsg.className = "error";
+                    authMsg.style.display = "block";
                 }
                 document.getElementById('confirmChangeBtn').disabled = false;
                 document.getElementById('confirmChangeBtn').textContent = "Ändern";
             } else {
-                alert("Ungültige Eingabe! Bitte geben Sie den aktuellen Code ein und einen neuen Code mit 4-16 Zeichen.");
+                authMsg.textContent = "Ungültige Eingabe! Bitte geben Sie den aktuellen Code ein und einen neuen Code mit 4-16 Zeichen.";
+                authMsg.className = "error";
+                authMsg.style.display = "block";
             }
         }
 
-        // Event Listener
+        // Beep-Zeit Einstellungen
+        document.getElementById('saveBeepTimesBtn').addEventListener('click', async function() {
+            const doubleBeep = parseInt(document.getElementById('doubleBeepInput').value);
+            const longBeep = parseInt(document.getElementById('longBeepInput').value);
+            const errorMsg = document.getElementById('beepTimeError');
+            const successMsg = document.getElementById('beepTimeSuccess');
+
+            // Validierung
+            if (isNaN(doubleBeep) || doubleBeep < 1 || doubleBeep > 180) {
+                errorMsg.textContent = "Doppelbeep-Zeit muss zwischen 1 und 180 Sekunden liegen!";
+                errorMsg.style.display = "block";
+                return;
+            }
+            if (isNaN(longBeep) || longBeep < 1 || longBeep > 300) {
+                errorMsg.textContent = "Dauerbeep-Zeit muss zwischen 1 und 300 Sekunden liegen!";
+                errorMsg.style.display = "block";
+                return;
+            }
+
+            errorMsg.style.display = "none";
+            this.disabled = true;
+            this.textContent = "Speichere...";
+
+            await sendCommand("SETDELAYS:" + doubleBeep + "," + longBeep);
+
+            this.disabled = false;
+            this.textContent = "Zeiten speichern";
+        });
+
+        // Initialisierung
         document.getElementById('connectBtn').addEventListener('click', connect);
         document.getElementById('disconnectBtn').addEventListener('click', disconnect);
         document.getElementById('blinkerOnBtn').addEventListener('click', async () => {
@@ -477,18 +603,6 @@
             document.getElementById('blinkerOffBtn').disabled = false;
         });
 
-        // Blinkanimation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes blink {
-                0% { opacity: 1; }
-                50% { opacity: 0.3; box-shadow: 0 0 20px #FFD700; }
-                100% { opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Initialisierung
         if (!navigator.bluetooth) {
             document.getElementById('connectionStatus').textContent = 
                 "Web Bluetooth wird von diesem Browser nicht unterstützt";
