@@ -4,36 +4,6 @@ let rxCharacteristic;
 let codeIsSet = false;
 let isAuthenticated = false;
 
-
-
-// Prüfe, ob iOS + nicht als PWA geöffnet
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent);
-}
-
-function isInStandaloneMode() {
-  return window.matchMedia('(display-mode: standalone)').matches || 
-         window.navigator.standalone;
-}
-
-if (isIOS() && !isInStandaloneMode()) {
-  const warning = `
-    <div class="error" style="display: block !important; margin: 20px 0; padding: 15px;">
-      <h3>📱 iOS-Benutzer: Bluetooth nur als App verfügbar!</h3>
-      <p>Damit Bluetooth funktioniert, musst du diese Webseite installieren:</p>
-      <ol>
-        <li>Tippe auf <strong>"Teilen"</strong> (📤) in Safari</li>
-        <li>Wähle <strong>"Zum Home-Bildschirm"</strong></li>
-        <li>Öffne die App vom Home-Bildschirm</li>
-      </ol>
-      <p><small>Hinweis: Im normalen Safari-Browser ist Bluetooth blockiert.</small></p>
-    </div>
-  `;
-  document.body.insertAdjacentHTML('afterbegin', warning);
-}
-
-
-
 async function connect() {
     try {
         document.getElementById('connectBtn').disabled = true;
